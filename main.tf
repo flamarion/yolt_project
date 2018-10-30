@@ -6,18 +6,60 @@ provider "kubernetes" {
   cluster_ca_certificate = "${file("/Volumes/HD2/flamarion/.minikube/ca.crt")}"
 }
 
-resource "kubernetes_pod" "flama_app" {
+variable "instance_count" {
+  description = "Instance count"
+  default = 1
+}
+
+variable "demo_app_label" {
+  description = "Label"
+  default = "demo-app"
+}
+
+variable "demo_app_ns_name" {
+  description = "Namespace name"
+  default = "demo-app-ns"
+}
+
+resource "kubernetes_namespace" "demo_app" {
   metadata {
-    name = "flama-app"
+    name = "${var.demo_app_ns_name}"
     labels {
-      app = "flama-app"
+      app = "${var.demo_app_label}"
     }
+  }
+}
+
+resource "kubernetes_config_map" "demo_app" {
+  count = "${var.instance_count}"
+  metadata {
+    name = "cm-${count.index}"
+    labels {
+      app = "${var.demo_app_label}"
+    }
+    namespace = "${var.demo_app_ns_name}"
+  }
+
+  data {
+    app_name = "YOLT-Config-Map-Kubernetes"
+  }
+}
+
+resource "kubernetes_pod" "demo_app" {
+  count = "${var.instance_count}"
+
+  metadata {
+    name = "pod-${count.index}"
+    labels {
+      app = "${var.demo_app_label}"
+    }
+    namespace = "${var.demo_app_ns_name}"
   }
 
   spec {
     container {
       image             = "flamarion/myapp:beta"
-      name              = "flama-app"
+      name              = "demo-app"
       image_pull_policy = "Always"
 
       port {
@@ -27,22 +69,30 @@ resource "kubernetes_pod" "flama_app" {
   }
 }
 
-resource "kubernetes_service" "flama_app" {
+resource "kubernetes_service" "demo_app" {
+  count = "${var.instance_count}"
+
   metadata {
-    name = "flama-app"
+    name = "service-${count.index}"
+    namespace = "${var.demo_app_ns_name}"
+
     labels {
-      app = "flama-app"
+      app = "${var.demo_app_label}"
     }
   }
+
   spec {
     selector {
-      app = "${kubernetes_pod.flama_app.metadata.0.labels.app}"
+      app = "${var.demo_app_label}"
     }
+
     session_affinity = "ClientIP"
+
     port {
-      port = 8080
+      port        = 8080
       target_port = 8080
     }
+
     type = "ClusterIP"
   }
 }
