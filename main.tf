@@ -1,34 +1,4 @@
-variable "cluster_ip" {
-  description = "Kubernetes cluster IP"
-}
-
-variable "client_cert" {
-  description = "Client Certificate"
-}
-
-variable "client_key" {
-  description = "Client Key"
-}
-
-variable "ca_crt" {
-  description = "CA Cert"
-}
-
-variable "instance_count" {
-  description = "Instance count"
-  default     = 1
-}
-
-variable "demo_app_label" {
-  description = "Label"
-  default     = "demo-app"
-}
-
-variable "demo_app_ns_name" {
-  description = "Namespace name"
-  default     = "demo-app-ns"
-}
-
+# Setup the provider to connnect to Kubernetes cluster
 provider "kubernetes" {
   host = "${var.cluster_ip}"
 
@@ -37,6 +7,7 @@ provider "kubernetes" {
   cluster_ca_certificate = "${file(var.ca_crt)}"
 }
 
+# Create the NameSpace where the application will run
 resource "kubernetes_namespace" "demo_app" {
   metadata {
     name = "${var.demo_app_ns_name}"
@@ -47,6 +18,7 @@ resource "kubernetes_namespace" "demo_app" {
   }
 }
 
+# Create the ConfigMap inside the NameSpace
 resource "kubernetes_config_map" "demo_app" {
   count = "${var.instance_count}"
 
@@ -67,6 +39,7 @@ resource "kubernetes_config_map" "demo_app" {
   depends_on = ["kubernetes_namespace.demo_app"]
 }
 
+# Create the pod using the image from docker hub
 resource "kubernetes_pod" "demo_app" {
   count = "${var.instance_count}"
 
@@ -102,6 +75,7 @@ resource "kubernetes_pod" "demo_app" {
   }
 }
 
+# Create the service to expose the application
 resource "kubernetes_service" "demo_app" {
   count = "${var.instance_count}"
 
