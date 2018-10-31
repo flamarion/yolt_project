@@ -63,6 +63,8 @@ resource "kubernetes_config_map" "demo_app" {
   data {
     app_name = "YOLT Demo App - ConfigMap"
   }
+
+  depends_on = ["kubernetes_namespace.demo_app"]
 }
 
 resource "kubernetes_pod" "demo_app" {
@@ -124,6 +126,6 @@ resource "kubernetes_service" "demo_app" {
       target_port = 8080
     }
 
-    type = "ClusterIP"
+    type = "NodePort"
   }
 }
