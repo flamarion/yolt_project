@@ -2,7 +2,7 @@
 
 This Demo will run a simple python application that print a value mapped from Kubernetes ConfigMap
 
-The docker image used is `flamarion/myapp:beta`
+The docker image used is `flamarion/myapp:beta` and Docker file used to create the image is also available in this repository
 
 ### Preparation
 
@@ -80,23 +80,25 @@ These commands will create the following components in your Minikube cluster
 
 To query each one of the services created you can use the following commands
 
+
 ```
-# Name space
+# NameSpaces
+kubectl get namespaces
 kubectl describe namespace demo-app-ns
 
 # Pods
-kubectl get pods -n demo-app-ns
-kubectl describe pods -n demo-app-ns
+kubectl get pod -n demo-app-ns pod-demo-app-1
+kubectl describe pod -n demo-app-ns pod-demo-app-1
 
 # Services
-kubectl get services -n demo-app-ns
-kubectl describe services -n demo-app-ns
+kubectl get service -n demo-app-ns service-demo-app-1
+kubectl describe service -n demo-app-ns service-demo-app-1
 
 # ConfigMaps
-kubectl get configmaps -n demo-app-ns
-kubectl describe configmaps -n demo-app-ns
+kubectl get configmap -n demo-app-ns cm-demo-app-1
+kubectl describe configmap -n demo-app-ns cm-demo-app-1
 ```
 
-We're running the service using NodePort, so to access the service you can use the following command
+To access the service you can use the following command
 
 `minikube service -n demo-app-ns service-demo-app-1`
