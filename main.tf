@@ -1,29 +1,46 @@
-provider "kubernetes" {
-  host = "https://192.168.99.102:8443"
+variable "cluster_ip" {
+  description = "Kubernetes cluster IP"
+}
 
-  client_certificate     = "${file("/Volumes/HD2/flamarion/.minikube/client.crt")}"
-  client_key             = "${file("/Volumes/HD2/flamarion/.minikube/client.key")}"
-  cluster_ca_certificate = "${file("/Volumes/HD2/flamarion/.minikube/ca.crt")}"
+variable "client_cert" {
+  description = "Client Certificate"
+}
+
+variable "client_key" {
+  description = "Client Key"
+}
+
+variable "ca_crt" {
+  description = "CA Cert"
 }
 
 variable "instance_count" {
   description = "Instance count"
-  default = 1
+  default     = 1
 }
 
 variable "demo_app_label" {
   description = "Label"
-  default = "demo-app"
+  default     = "demo-app"
 }
 
 variable "demo_app_ns_name" {
   description = "Namespace name"
-  default = "demo-app-ns"
+  default     = "demo-app-ns"
+}
+
+provider "kubernetes" {
+  host = "${var.cluster_ip}"
+
+  client_certificate     = "${file(var.client_cert)}"
+  client_key             = "${file(var.client_key)}"
+  cluster_ca_certificate = "${file(var.ca_crt)}"
 }
 
 resource "kubernetes_namespace" "demo_app" {
   metadata {
     name = "${var.demo_app_ns_name}"
+
     labels {
       app = "${var.demo_app_label}"
     }
@@ -32,16 +49,19 @@ resource "kubernetes_namespace" "demo_app" {
 
 resource "kubernetes_config_map" "demo_app" {
   count = "${var.instance_count}"
+
   metadata {
-    name = "cm-${count.index}"
+    name = "cm-demo-app-${count.index + 1}"
+
     labels {
       app = "${var.demo_app_label}"
     }
+
     namespace = "${var.demo_app_ns_name}"
   }
 
   data {
-    app_name = "YOLT-Config-Map-Kubernetes"
+    app_name = "YOLT Demo App - ConfigMap"
   }
 }
 
@@ -49,10 +69,12 @@ resource "kubernetes_pod" "demo_app" {
   count = "${var.instance_count}"
 
   metadata {
-    name = "pod-${count.index}"
+    name = "pod-demo-app-${count.index + 1}"
+
     labels {
       app = "${var.demo_app_label}"
     }
+
     namespace = "${var.demo_app_ns_name}"
   }
 
@@ -65,6 +87,15 @@ resource "kubernetes_pod" "demo_app" {
       port {
         container_port = 8080
       }
+
+      env_from = [{
+        config_map_ref {
+          name     = "${kubernetes_config_map.demo_app.metadata.0.name}"
+          optional = false
+        }
+
+        prefix = "FROM_CM"
+      }]
     }
   }
 }
@@ -73,7 +104,7 @@ resource "kubernetes_service" "demo_app" {
   count = "${var.instance_count}"
 
   metadata {
-    name = "service-${count.index}"
+    name      = "service-demo-app-${count.index + 1}"
     namespace = "${var.demo_app_ns_name}"
 
     labels {

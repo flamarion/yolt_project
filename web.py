@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import os
 
-form = '''Flama App'''
+form = 'Hello {}'.format(os.environ['FROM_CMapp_name'])
 
-class MessageHandler(BaseHTTPRequestHandler):
+class SimpleWebServer(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain; charset=utf-8')
@@ -13,6 +14,5 @@ class MessageHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     server_address = ('', 8080)
-    httpd = HTTPServer(server_address, MessageHandler)
+    httpd = HTTPServer(server_address, SimpleWebServer)
     httpd.serve_forever()
-    
