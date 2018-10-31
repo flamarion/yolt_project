@@ -47,7 +47,6 @@ After that, follow the steps below:
 
 ```
 terraform init
-
 ```
 
 **terraform plan**
@@ -55,7 +54,10 @@ terraform init
 In my case, I'm going to use the values from the `kube/config` file, replace by yours:
 
 ```
-terraform plan -var 'cluster_ip=https://192.168.99.100:8443' -var 'client_cert=/Users/fjorg1/.minikube/client.crt' -var 'client_key=/Users/fjorg1/.minikube/client.key' -var 'ca_crt=/Users/fjorg1/.minikube/ca.crt'
+terraform plan -var 'cluster_ip=https://192.168.99.100:8443' \
+  -var 'client_cert=/Users/fjorg1/.minikube/client.crt' \
+  -var 'client_key=/Users/fjorg1/.minikube/client.key' \
+  -var 'ca_crt=/Users/fjorg1/.minikube/ca.crt'
 ```
 
 **terraform apply**
@@ -63,7 +65,10 @@ terraform plan -var 'cluster_ip=https://192.168.99.100:8443' -var 'client_cert=/
 Finally, apply the plan previously created
 
 ```
-terraform plan -var 'cluster_ip=https://192.168.99.100:8443' -var 'client_cert=/Users/fjorg1/.minikube/client.crt' -var 'client_key=/Users/fjorg1/.minikube/client.key' -var 'ca_crt=/Users/fjorg1/.minikube/ca.crt'
+terraform plan -var 'cluster_ip=https://192.168.99.100:8443' \
+  -var 'client_cert=/Users/fjorg1/.minikube/client.crt' \
+  -var 'client_key=/Users/fjorg1/.minikube/client.key' \
+  -var 'ca_crt=/Users/fjorg1/.minikube/ca.crt'
 ```
 
 These commands will create the following components in your Minikube cluster
