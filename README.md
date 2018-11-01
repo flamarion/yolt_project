@@ -91,8 +91,8 @@ kubectl get configmaps -n demo-app-ns
 kubectl describe configmaps -n demo-app-ns
 
 # Repplication Controller
-kubectl get replicationcontrollera -n demo-app-ns
-kubectl describe replicationcontrollera -n demo-app-ns
+kubectl get replicationcontrollers -n demo-app-ns
+kubectl describe replicationcontrollers -n demo-app-ns
 ```
 
 To access the the application you can use the following command

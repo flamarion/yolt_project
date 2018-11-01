@@ -2,6 +2,7 @@
 provider "kubernetes" {
   config_context_auth_info = "minikube"
   config_context_cluster   = "minikube"
+  version                  = "~> 1.3"
 }
 
 # Create the NameSpace where the application will run
