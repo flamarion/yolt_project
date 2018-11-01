@@ -6,9 +6,9 @@ The docker image used is `flamarion/myapp:beta` and Docker file used to create t
 
 ### Preparation
 
-It has been tested with Minikube, so take a look at how to install and configure minikube here:
+It has been tested with Minikube, so take a look at how to install and run minikube here:
 
-https://kubernetes.io/docs/tasks/tools/install-minikube/
+https://github.com/kubernetes/minikube/blob/v0.30.0/README.md
 
 It's necessary to have Terraform installed as well, so follow this link to install the terraform
 
@@ -16,32 +16,24 @@ https://www.terraform.io/intro/getting-started/install.html
 
 ### Usage
 
-After installed and the cluster running, get the configuration which you'll need to connect to the cluster
+After installed and the cluster running, get the configuration which you'll need to connect to the cluster and set the terraform provider properlly
 
 ```
-cat ~/.kube/config
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority: /Users/fjorg1/.minikube/ca.crt
-    server: https://192.168.99.100:8443
-  name: minikube
-contexts:
-- context:
-    cluster: minikube
-    user: minikube
-  name: minikube
-current-context: minikube
-kind: Config
-preferences: {}
-users:
-- name: minikube
-  user:
-    client-certificate: /Users/fjorg1/.minikube/client.crt
-    client-key: /Users/fjorg1/.minikube/client.key
+kubectl config get-contexts
+CURRENT   NAME       CLUSTER    AUTHINFO   NAMESPACE
+*         minikube   minikube   minikube
 ```
 
-After that, follow the steps below:
+In `main.tf` set the following properties according the results which you get from `get-contexts`
+
+```
+provider "kubernetes" {
+  config_context_auth_info = "minikube"
+  config_context_cluster   = "minikube"
+}
+```
+
+After that, follow the steps below to init, validate, plan and apply the terraform configuration in order to deploy the application
 
 **terraform init**
 
@@ -49,16 +41,15 @@ After that, follow the steps below:
 terraform init
 ```
 
+**terraform validate**
+```
+terraform validate
+```
+
 **terraform plan**
 
-In my case, I'm going to use the values from the `~/.kube/config` file, replace by yours:
-
 ```
-terraform plan -var 'cluster_ip=https://192.168.99.100:8443' \
-  -var 'client_cert=~/.minikube/client.crt' \
-  -var 'client_key=~/.minikube/client.key' \
-  -var 'ca_crt=~/.minikube/ca.crt' \
-  -out demo-app.plan
+terraform plan -out demo-app.plan
 ```
 
 **terraform apply**
@@ -74,12 +65,13 @@ terraform apply demo-app.plan
 These commands will create the following components in your Minikube cluster
 
 - namespace: demo-app-ns
-- pod: pod-demo-app-1
-- service: service-demo-app-1
-- configmap: cm-demo-app-1
+- replication controller: pod-demo-app
+- service: service-demo-app
+- configmap: cm-demo-app
 
-To query each one of the services created you can use the following commands
+You can scale out the pods changing the `replica_count` variable number in `variables.tf`
 
+To query each the resources created you can use the following commands
 
 ```
 # NameSpaces
@@ -87,18 +79,30 @@ kubectl get namespaces
 kubectl describe namespace demo-app-ns
 
 # Pods
-kubectl get pod -n demo-app-ns pod-demo-app-1
-kubectl describe pod -n demo-app-ns pod-demo-app-1
+kubectl get pods -n demo-app-ns
+kubectl describe pods -n demo-app-ns
 
 # Services
-kubectl get service -n demo-app-ns service-demo-app-1
-kubectl describe service -n demo-app-ns service-demo-app-1
+kubectl get services -n demo-app-ns
+kubectl describe services -n demo-app-ns
 
 # ConfigMaps
-kubectl get configmap -n demo-app-ns cm-demo-app-1
-kubectl describe configmap -n demo-app-ns cm-demo-app-1
+kubectl get configmaps -n demo-app-ns
+kubectl describe configmaps -n demo-app-ns
+
+# Repplication Controller
+kubectl get replicationcontrollera -n demo-app-ns
+kubectl describe replicationcontrollera -n demo-app-ns
 ```
 
-To access the service you can use the following command
+To access the the application you can use the following command
 
-`minikube service -n demo-app-ns service-demo-app-1`
+`minikube service -n demo-app-ns service-demo-app`
+
+This application is accessing the value assigned to the `app_name` key configured in ConfigMap `cm-demo-app`.
+
+To destroy the whole resources created you can perform the following command:
+
+```
+terraform destroy
+```

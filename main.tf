@@ -1,10 +1,7 @@
 # Setup the provider to connnect to Kubernetes cluster
 provider "kubernetes" {
-  host = "${var.cluster_ip}"
-
-  client_certificate     = "${file(var.client_cert)}"
-  client_key             = "${file(var.client_key)}"
-  cluster_ca_certificate = "${file(var.ca_crt)}"
+  config_context_auth_info = "minikube"
+  config_context_cluster   = "minikube"
 }
 
 # Create the NameSpace where the application will run
@@ -20,10 +17,8 @@ resource "kubernetes_namespace" "demo_app" {
 
 # Create the ConfigMap inside the NameSpace
 resource "kubernetes_config_map" "demo_app" {
-  count = "${var.instance_count}"
-
   metadata {
-    name = "cm-demo-app-${count.index + 1}"
+    name = "cm-demo-app"
 
     labels {
       app = "${var.demo_app_label}"
@@ -39,48 +34,52 @@ resource "kubernetes_config_map" "demo_app" {
   depends_on = ["kubernetes_namespace.demo_app"]
 }
 
-# Create the pod using the image from docker hub
-resource "kubernetes_pod" "demo_app" {
-  count = "${var.instance_count}"
+# Create the Replication Controller
 
+resource "kubernetes_replication_controller" "demo_app" {
   metadata {
-    name = "pod-demo-app-${count.index + 1}"
+    name      = "pod-demo-app"
+    namespace = "${var.demo_app_ns_name}"
 
     labels {
       app = "${var.demo_app_label}"
     }
-
-    namespace = "${var.demo_app_ns_name}"
   }
 
   spec {
-    container {
-      image             = "flamarion/myapp:beta"
-      name              = "demo-app"
-      image_pull_policy = "Always"
+    replicas = "${var.replica_count}"
 
-      port {
-        container_port = 8080
-      }
+    selector {
+      app = "${var.demo_app_label}"
+    }
 
-      env_from = [{
-        config_map_ref {
-          name     = "${kubernetes_config_map.demo_app.metadata.0.name}"
-          optional = false
+    template {
+      container {
+        image             = "flamarion/myapp:beta"
+        name              = "demo-app"
+        image_pull_policy = "Always"
+
+        port {
+          container_port = 8080
         }
 
-        prefix = "FROM_CM"
-      }]
+        env_from = [{
+          config_map_ref {
+            name     = "${kubernetes_config_map.demo_app.metadata.0.name}"
+            optional = false
+          }
+
+          prefix = "FROM_CM"
+        }]
+      }
     }
   }
 }
 
 # Create the service to expose the application
 resource "kubernetes_service" "demo_app" {
-  count = "${var.instance_count}"
-
   metadata {
-    name      = "service-demo-app-${count.index + 1}"
+    name      = "service-demo-app"
     namespace = "${var.demo_app_ns_name}"
 
     labels {
@@ -102,4 +101,8 @@ resource "kubernetes_service" "demo_app" {
 
     type = "NodePort"
   }
+}
+
+output "service_api" {
+  value = "${kubernetes_service.demo_app.metadata.0.self_link}"
 }
